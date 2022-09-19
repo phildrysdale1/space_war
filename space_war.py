@@ -16,10 +16,11 @@ win = turtle.Screen()
 win.setup(screen_width, screen_height)
 win.title("Space Wars by Phil Drysdale")
 win.bgcolor("black")
+win.tracer(0)
 
 
-
-## CREATE MAIN PEN OBJECT FOR RENDERING ALL OBJECTS
+## ---- RENDERING OBJECTS ---- ##
+# CREATE MAIN PEN OBJECT FOR RENDERING ALL OBJECTS
 pen = turtle.Turtle()
 pen.speed(0)
 pen.shape("square")
@@ -27,8 +28,7 @@ pen.color("white")
 pen.penup()
 pen.hideturtle()
 
-## Sprite Class
-
+# SPRITE CLASS
 class Sprite():
     # Constructor - called when creating object
     def __init__(self, x, y, shape, color):
@@ -36,26 +36,60 @@ class Sprite():
         self.y = y
         self.shape = shape
         self.color = color
-    
+        self.dx = 0
+        self.dy = 0
+
+    # Update self
+    def update(self):
+        self.x += self.dx
+        self.y += self.dy
+
+    # Render created sprite
     def render(self, pen):
         pen.goto(self.x, self.y)
         pen.shape(self.shape)
         pen.color(self.color)
         pen.stamp()
 
-## Create player sprite
-
+## ---- OBJECTS ---- ##
+# Create player sprite
 player = Sprite(0,0,"triangle", "white")
-player.render(pen)
+player.dx = 0.05
 
-## Create a test enemy sprite
-
+# Create a test enemy sprite
 enemy = Sprite(100,100,"triangle", "red")
-enemy.render(pen)
+enemy.dx = -0.05
 
-## Create a test powerup sprite
-powerup = Sprite(-200,-100,"circle", "red")
-powerup.render(pen)
+# Create a test powerup sprite
+powerup = Sprite(-200,-100,"circle", "blue")
+powerup.dy = 0.05
+
+
+## Sprites List
+sprites = []
+sprites.append(player)
+sprites.append(enemy)
+sprites.append(powerup)
+
+## ---- FUNCTIONS ---- ##
+
+
 
 ## ---- GAME LOOP ---- ##
-win.mainloop()
+while True:
+    # Clear screen
+    pen.clear()
+
+    ## Run game loop
+
+    # Update sprites
+    for sprite in sprites:
+        sprite.update()
+
+    # Render Sprites
+    for sprite in sprites:
+        sprite.render(pen)
+
+    # Update screen
+    win.update()
+    print(sprites)
