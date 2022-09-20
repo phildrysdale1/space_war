@@ -34,7 +34,38 @@ class Game():
     def __init__ (self, width, height):
         self.width = width
         self.height = height
-    
+        self.level = 1
+
+    def start_level(self):
+        sprites.clear()
+
+        # Add player
+        sprites.append(player)
+        
+        # Add missile
+        sprites.append(missile)
+
+        # Add enemies
+        for l in range(self.level):
+            x = random.randint(-self.width/2+10, self.width/2-10)
+            y = random.randint(-self.height/2+10, self.height/2-10)
+            dx = random.uniform(-0.5,0.5)
+            dy = random.uniform(-0.5,0.5)
+            sprites.append(Enemy(x,y,"square", "red"))
+            sprites[-1].dx = dx
+            sprites[-1].dy = dy
+
+        # Add powerups
+        for l in range(self.level):
+            x = random.randint(-self.width/2+10, self.width/2-10)
+            y = random.randint(-self.height/2+10, self.height/2-10)
+            dx = random.uniform(-0.5,0.5)
+            dy = random.uniform(-0.5,0.5)
+            sprites.append(Powerup(x,y,"circle", "green"))
+            sprites[-1].dx = dx
+            sprites[-1].dy = dy
+
+
     def render_border(self, pen):
         pen.color("white")
         pen.width(3)
@@ -68,11 +99,12 @@ class Sprite():
         self.heading = 0
         self.da = 0
         self.thrust = 0.0
-        self.acceleration = 0.0002
+        self.acceleration = 0.0008
         self.health = 100
         self.max_health = 100
         self.width = 20
         self.height = 20
+        self.state = "active"
         # Create list spaning full health range and mapping it to a RGB color for a gradient healthbar
         self.colors = list(Color("red").range_to(Color("Green"), self.max_health))
 
@@ -113,16 +145,16 @@ class Sprite():
             self.y = -game.height/2.0 + 10
             self.dy *= -1
 
-
     # Render created sprite
     def render(self, pen):
-        pen.goto(self.x, self.y)
-        pen.setheading(self.heading)
-        pen.shape(self.shape)
-        pen.color(self.color)
-        pen.stamp()
+        if self.state == "active":
+            pen.goto(self.x, self.y)
+            pen.setheading(self.heading)
+            pen.shape(self.shape)
+            pen.color(self.color)
+            pen.stamp()
 
-        self.render_health_meter(pen)
+            self.render_health_meter(pen)
 
     # Render health bar 
     def render_health_meter(self, pen):
@@ -141,7 +173,7 @@ class Sprite():
 
 # Create game object
 
-game = Game(810, 610)
+game = Game(800, 600)
 
 
 
@@ -153,12 +185,16 @@ class Player(Sprite):
         self.score = 0
         self.heading = 90 # determine direction for player sprite
         self.da = 0
+        self.max_health = 100
+        self.health = self.max_health
+         # Create list spaning full health range and mapping it to a RGB color for a gradient healthbar
+        self.colors = list(Color("red").range_to(Color("Green"), self.max_health))
 
     def rotate_left(self):
-        self.da = 0.2
+        self.da = 0.5
 
     def rotate_right(self):
-        self.da = -0.2
+        self.da = -0.5
 
     def stop_rotation(self):
         self.da = 0
@@ -191,6 +227,31 @@ class Player(Sprite):
 class Enemy(Sprite):
     def __init__(self, x, y, shape, color):
         Sprite.__init__(self, x, y, shape, color)
+        self.max_health = 30
+        self.health = self.max_health
+        # Create list spaning full health range and mapping it to a RGB color for a gradient healthbar
+        self.colors = list(Color("red").range_to(Color("Green"), self.max_health))
+
+    def update(self):
+        if self.state == "active":
+            self.heading += self.da
+            self.heading %= 360
+
+            self.dx += math.cos(math.radians(self.heading)) * self.thrust
+            self.dy += math.sin(math.radians(self.heading)) * self.thrust
+
+            self.x += self.dx
+            self.y += self.dy
+
+            self.border_col_check()
+
+            # check health
+            if self.health <= 0:
+                self.reset()
+    
+    def reset(self):
+        self.state = "inactive"
+
 
 ## ---------- Powerup class ---------- ##
 class Powerup(Sprite):
@@ -263,27 +324,12 @@ player = Player(0,0,"triangle", "white")
 # Create missle sprite
 missile = Missile(0,100, "square", "yellow")
 
-# Create a test enemy sprite
-enemy = Enemy(100,100,"triangle", "red")
-enemy.dx = -0.05
-enemy2 = Enemy(-100,-200,"triangle", "red")
-enemy2.dx = -0.05
-
-# Create a test powerup sprite
-powerup = Powerup(-200,-100,"circle", "blue")
-powerup.dy = 0.05
-powerup2 = Powerup(200,100,"circle", "blue")
-powerup2.dx = 0.05
-powerup2.dy = 0.05
-
 # Sprites List
 sprites = []
-sprites.append(player)
-sprites.append(enemy)
-sprites.append(powerup)
-sprites.append(missile)
-sprites.append(enemy2)
-sprites.append(powerup2)
+
+# Setup the level
+
+game.start_level()
 
 ## ---------- KEYBOARD BINDINGS ---------- ##
 win.listen()
@@ -315,13 +361,14 @@ while True:
 
     # Check for collisions
     for sprite in sprites:
-        if isinstance(sprite, Enemy):
+        if isinstance(sprite, Enemy) and sprite.state == "active":
             if player.is_collision(sprite):
                 player.x = 0
                 player.y = 0
                 player.lives -= 1
             
             if missile.state == "active" and missile.is_collision(sprite):
+                sprite.health -= 10
                 sprite.x = -100
                 sprite.y = -100
                 missile.reset()
@@ -343,5 +390,15 @@ while True:
 
     game.render_border(pen)
 
+    # Check for end of level
+    end_of_level = True
+    for sprite in sprites:
+        #look for active enemy
+        if isinstance(sprite, Enemy) and sprite.state == "active":
+            end_of_level = False
+    if end_of_level:
+        game.level += 1
+        game.start_level()
+        
     # Update screen
     win.update()
