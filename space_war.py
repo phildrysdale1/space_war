@@ -158,6 +158,9 @@ class Player(Sprite):
 
     def decelerate(self):
         self.thrust = 0.0
+
+    def fire(self):
+        missile.fire(self.x, self.y, self.heading, self.dx, self.dy)
     
 
 # Render created sprite
@@ -173,11 +176,68 @@ class Player(Sprite):
 
         self.render_health_meter(pen)
 
-        
+# Missle class
+
+class Missile(Sprite):
+    def __init__ (self, x, y, shape, color):
+        Sprite.__init__(self, x, y, shape, color)
+        self.state = "ready"
+        self.thrust = 1.0
+        self.max_fuel = 500
+        self.fuel = self.max_fuel
+
+    def fire(self, x, y, heading, dx, dy):
+        self.state = "active"
+        self.x = x
+        self.y = y
+        self.heading = heading
+        self.dx = dx
+        self.dy = dy
+
+        self.dx += math.cos(math.radians(self.heading)) * self.thrust
+        self.dy += math.sin(math.radians(self.heading)) * self.thrust
+
+    def update(self):
+        if self.state == "active":
+            self.fuel -= self.thrust
+            if self.fuel <= 0:
+                self.reset()
+
+            self.heading += self.da
+            self.heading %= 360
+
+            self.x += self.dx
+            self.y += self.dy
+
+            self.border_col_check()
+
+    def reset(self):
+        self.fuel = self.max_fuel
+        self.dx = 0
+        self.dy = 0
+        self.state = "ready"
+
+
+    def render(self, pen):
+        if self.state == "active":
+            pen.shapesize(0.1, 0.4, None) # modify shape of player ship to make it clear which way it's facing.
+            pen.goto(self.x, self.y)
+            pen.setheading(self.heading)
+            pen.shape(self.shape)
+            pen.color(self.color)
+            pen.stamp()
+            # reset shapesize to stop any other objects being modified
+            pen.shapesize(1.0, 1.0, None)
+
+            self.render_health_meter(pen)
+
 
 ## ---- OBJECTS ---- ##
 # Create player sprite
 player = Player(0,0,"triangle", "white")
+
+# Create missle sprite
+missile = Missile(0,100, "square", "yellow")
 
 # Create a test enemy sprite
 enemy = Sprite(100,100,"triangle", "red")
@@ -192,6 +252,7 @@ sprites = []
 sprites.append(player)
 sprites.append(enemy)
 sprites.append(powerup)
+sprites.append(missile)
 
 ## ---- KEYBOARD BINDINGS ---- ##
 win.listen()
@@ -203,6 +264,8 @@ win.onkeyrelease(player.stop_rotation, "a")
 
 win.onkeypress(player.rotate_right, "d")
 win.onkeyrelease(player.stop_rotation, "d")
+
+win.onkeypress(player.fire, "space")
 
 ## ---- FUNCTIONS ---- ##
 
