@@ -208,7 +208,43 @@ class Player(Sprite):
 
     def fire(self):
         missile.fire(self.x, self.y, self.heading, self.dx, self.dy)
+
+    def bounce(self, other):
+        temp_dx = self.dx
+        temp_dy = self.dy
+
+        self.dx = other.dx * 0.7
+        self.dy = other.dy * 0.7
+
+        other.dx = temp_dx * 0.7
+        other.dy = temp_dy * 0.7
+
+    def update(self):
+        if self.state == "active":
+            self.heading += self.da
+            self.heading %= 360
+
+            self.dx += math.cos(math.radians(self.heading)) * self.thrust
+            self.dy += math.sin(math.radians(self.heading)) * self.thrust
+
+            self.x += self.dx
+            self.y += self.dy
+
+            self.border_col_check()
+
+            # check health
+            if self.health <= 0:
+                self.reset()
     
+    def reset(self):
+        self.x = 0
+        self.y = 0
+        self.health = self.max_health
+        self.heading = 90
+        self.dx = 0
+        self.dy = 0
+        self.lives -= 1
+
 
 # Render created sprite
     def render(self, pen):
@@ -363,8 +399,9 @@ while True:
     for sprite in sprites:
         if isinstance(sprite, Enemy) and sprite.state == "active":
             if player.is_collision(sprite):
-                player.x = 0
-                player.y = 0
+                sprite.health -= 10
+                player.health -= 10
+                player.bounce(sprite)
                 player.lives -= 1
             
             if missile.state == "active" and missile.is_collision(sprite):
@@ -396,9 +433,10 @@ while True:
         #look for active enemy
         if isinstance(sprite, Enemy) and sprite.state == "active":
             end_of_level = False
+            break
     if end_of_level:
         game.level += 1
         game.start_level()
-        
+
     # Update screen
     win.update()
