@@ -1,4 +1,4 @@
-## ---- IMPORT PACKAGES ---- ##
+## ---------- IMPORT PACKAGES ---------- ##
 import turtle
 import math
 import random
@@ -6,19 +6,19 @@ import time
 import platform
 from colour import Color
 
-## ---- VARIABLES ---- ##
+## ---------- VARIABLES ---------- ##
 
 screen_width = 800
 screen_height = 600
 
-## ---- CREATE DISPLAY ---- ##
+## ---------- CREATE DISPLAY ---------- ##
 win = turtle.Screen()
 win.setup(screen_width, screen_height)
 win.title("Space Wars by Phil Drysdale")
 win.bgcolor("black")
 win.tracer(0)
 
-## ---- RENDERING OBJECTS ---- ##
+## ---------- RENDERING OBJECTS ---------- ##
 # CREATE MAIN PEN OBJECT FOR RENDERING ALL OBJECTS
 pen = turtle.Turtle()
 pen.speed(0)
@@ -27,7 +27,7 @@ pen.color("white")
 pen.penup()
 pen.hideturtle()
 
-## ---- CLASSES ---- ##
+## ---------- CLASSES ---------- ##
 # Game class
 
 class Game():
@@ -55,7 +55,7 @@ class Game():
         pen.penup()
 
 
-# Sprite Class
+## ---------- Sprite parent class ---------- ##
 class Sprite():
     # Constructor - called when creating object
     def __init__(self, x, y, shape, color):
@@ -71,8 +71,19 @@ class Sprite():
         self.acceleration = 0.0002
         self.health = 100
         self.max_health = 100
+        self.width = 20
+        self.height = 20
         # Create list spaning full health range and mapping it to a RGB color for a gradient healthbar
         self.colors = list(Color("red").range_to(Color("Green"), self.max_health))
+
+    def is_collision(self,other):
+        if self.x < other.x + other.width and\
+            self.x + self.width > other.x and\
+            self.y < other.y + other.height and\
+            self.y + self.height > other.y:
+            return True
+        else:
+            return False
 
     # Update self
     def update(self):
@@ -134,7 +145,7 @@ game = Game(810, 610)
 
 
 
-# Player child class
+## ---------- Player class ---------- ##
 class Player(Sprite):
     def __init__(self, x, y, shape, color):
         Sprite.__init__(self, 0, 0, shape, color)
@@ -176,26 +187,39 @@ class Player(Sprite):
 
         self.render_health_meter(pen)
 
-# Missle class
+## ---------- Enemy class ---------- ##
+class Enemy(Sprite):
+    def __init__(self, x, y, shape, color):
+        Sprite.__init__(self, x, y, shape, color)
+
+## ---------- Powerup class ---------- ##
+class Powerup(Sprite):
+    def __init__(self, x, y, shape, color):
+        Sprite.__init__(self, x, y, shape, color)
+
+## ---------- Missle class ---------- ##
 
 class Missile(Sprite):
     def __init__ (self, x, y, shape, color):
         Sprite.__init__(self, x, y, shape, color)
         self.state = "ready"
-        self.thrust = 1.0
-        self.max_fuel = 500
+        self.thrust = 1.5
+        self.max_fuel = 300
         self.fuel = self.max_fuel
+        self.height = 2
+        self.widght = 2
 
     def fire(self, x, y, heading, dx, dy):
-        self.state = "active"
-        self.x = x
-        self.y = y
-        self.heading = heading
-        self.dx = dx
-        self.dy = dy
+        if self.state == "ready":
+            self.state = "active"
+            self.x = x
+            self.y = y
+            self.heading = heading
+            self.dx = dx
+            self.dy = dy
 
-        self.dx += math.cos(math.radians(self.heading)) * self.thrust
-        self.dy += math.sin(math.radians(self.heading)) * self.thrust
+            self.dx += math.cos(math.radians(self.heading)) * self.thrust
+            self.dy += math.sin(math.radians(self.heading)) * self.thrust
 
     def update(self):
         if self.state == "active":
@@ -220,7 +244,7 @@ class Missile(Sprite):
 
     def render(self, pen):
         if self.state == "active":
-            pen.shapesize(0.1, 0.4, None) # modify shape of player ship to make it clear which way it's facing.
+            pen.shapesize(0.1, 0.1, None) # modify shape of player ship to make it clear which way it's facing.
             pen.goto(self.x, self.y)
             pen.setheading(self.heading)
             pen.shape(self.shape)
@@ -232,7 +256,7 @@ class Missile(Sprite):
             self.render_health_meter(pen)
 
 
-## ---- OBJECTS ---- ##
+## ---------- OBJECTS ---------- ##
 # Create player sprite
 player = Player(0,0,"triangle", "white")
 
@@ -240,12 +264,17 @@ player = Player(0,0,"triangle", "white")
 missile = Missile(0,100, "square", "yellow")
 
 # Create a test enemy sprite
-enemy = Sprite(100,100,"triangle", "red")
+enemy = Enemy(100,100,"triangle", "red")
 enemy.dx = -0.05
+enemy2 = Enemy(-100,-200,"triangle", "red")
+enemy2.dx = -0.05
 
 # Create a test powerup sprite
-powerup = Sprite(-200,-100,"circle", "blue")
+powerup = Powerup(-200,-100,"circle", "blue")
 powerup.dy = 0.05
+powerup2 = Powerup(200,100,"circle", "blue")
+powerup2.dx = 0.05
+powerup2.dy = 0.05
 
 # Sprites List
 sprites = []
@@ -253,8 +282,10 @@ sprites.append(player)
 sprites.append(enemy)
 sprites.append(powerup)
 sprites.append(missile)
+sprites.append(enemy2)
+sprites.append(powerup2)
 
-## ---- KEYBOARD BINDINGS ---- ##
+## ---------- KEYBOARD BINDINGS ---------- ##
 win.listen()
 win.onkeypress(player.accelerate, "w")
 win.onkeyrelease(player.decelerate, "w")
@@ -267,11 +298,11 @@ win.onkeyrelease(player.stop_rotation, "d")
 
 win.onkeypress(player.fire, "space")
 
-## ---- FUNCTIONS ---- ##
+## ---------- FUNCTIONS ---------- ##
 
 
 
-## ---- GAME LOOP ---- ##
+## ---------- GAME LOOP ---------- ##
 while True:
     # Clear screen
     pen.clear()
@@ -281,6 +312,30 @@ while True:
     # Update sprites
     for sprite in sprites:
         sprite.update()
+
+    # Check for collisions
+    for sprite in sprites:
+        if isinstance(sprite, Enemy):
+            if player.is_collision(sprite):
+                player.x = 0
+                player.y = 0
+                player.lives -= 1
+            
+            if missile.state == "active" and missile.is_collision(sprite):
+                sprite.x = -100
+                sprite.y = -100
+                missile.reset()
+
+        if isinstance(sprite, Powerup):
+            if player.is_collision(sprite):
+                sprite.x = 100
+                sprite.y = 100
+
+            if missile.state == "active" and missile.is_collision(sprite):
+                sprite.x = 100
+                sprite.y = 100
+                missile.reset()
+
 
     # Render Sprites
     for sprite in sprites:
