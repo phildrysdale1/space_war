@@ -4,6 +4,7 @@ import math
 import random
 import time
 import platform
+from colour import Color
 
 ## ---- VARIABLES ---- ##
 
@@ -27,6 +28,33 @@ pen.penup()
 pen.hideturtle()
 
 ## ---- CLASSES ---- ##
+# Game class
+
+class Game():
+    def __init__ (self, width, height):
+        self.width = width
+        self.height = height
+    
+    def render_border(self, pen):
+        pen.color("white")
+        pen.width(3)
+        pen.penup()
+
+        left = -self.width / 2.0
+        right = self.width / 2.0
+        top = self.height / 2.0
+        bottom = -self.height / 2.0
+
+        pen.goto(left, top)
+        pen.pendown()
+        pen.goto(right, top)
+        pen.goto(right, bottom)
+        pen.goto(left, bottom)
+        pen.goto(left, top)
+
+        pen.penup()
+
+
 # Sprite Class
 class Sprite():
     # Constructor - called when creating object
@@ -43,6 +71,8 @@ class Sprite():
         self.acceleration = 0.0002
         self.health = 100
         self.max_health = 100
+        # Create list spaning full health range and mapping it to a RGB color for a gradient healthbar
+        self.colors = list(Color("red").range_to(Color("Green"), self.max_health))
 
     # Update self
     def update(self):
@@ -54,6 +84,24 @@ class Sprite():
 
         self.x += self.dx
         self.y += self.dy
+
+        self.border_col_check()
+
+    # collision check with border
+    def border_col_check(self):
+        if self.x > game.width / 2.0 - 10:
+            self.x = game.width/2.0 - 10
+            self.dx *= -1
+        elif self.x < -game.width / 2.0 + 10:
+            self.x = -game.width/2.0 + 10
+            self.dx *= -1
+        elif self.y > game.height / 2.0 - 10:
+            self.y = game.height/2.0 - 10
+            self.dy *= -1
+        elif self.y < -game.height / 2.0 + 10:
+            self.y = -game.height/2.0 + 10
+            self.dy *= -1
+
 
     # Render created sprite
     def render(self, pen):
@@ -72,20 +120,19 @@ class Sprite():
         pen.pendown()
         pen.setheading(0)
 
-        if self.health/self.max_health <0.3:
-            pen.color("red")
-        elif self.health/self.max_health <0.7:
-            pen.color("yellow")
-        else:
-            pen.color("green")
-
+        # set health bar color from the list 'colors'.
+        pen.pencolor(self.colors[self.health-1].get_hex())
         pen.fd(20 * (self.health/self.max_health))
-        pen.color("grey")
-        pen.fd(20 * ((self.max_health-self.health+10)/self.max_health))
+        if self.health != self.max_health:
+            pen.color("grey")
+            pen.fd(20 * ((self.max_health-self.health)/self.max_health))
         pen.penup()
 
+# Create game object
 
-        
+game = Game(810, 610)
+
+
 
 # Player child class
 class Player(Sprite):
@@ -175,6 +222,8 @@ while True:
     # Render Sprites
     for sprite in sprites:
         sprite.render(pen)
+
+    game.render_border(pen)
 
     # Update screen
     win.update()
