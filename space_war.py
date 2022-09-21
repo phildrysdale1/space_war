@@ -120,6 +120,7 @@ class Game():
         character_pen.draw_string(pen, "Level: {}".format(game.level), 400, 180)
         character_pen.draw_string(pen, "Enemies: {}".format(active_enemies), 400, 150)
         character_pen.draw_string(pen, "Missiles: {}".format(player.ammo), 400, 120)
+        character_pen.draw_string(pen, "Speed: {}".format(player.acc), 400, 90)
 
 ## ---------- Character Pen class ---------- ##
 # For drawing text
@@ -308,15 +309,17 @@ class Player(Sprite):
         self.max_dy = 0.4
         self.max_health = 100
         self.health = self.max_health
-        self.ammo = 2
+        self.ammo = 1
+        self.default_acceleration = 0.1
+        self.acceleration = self.default_acceleration
          # Create list spaning full health range and mapping it to a RGB color for a gradient healthbar
         self.colors = list(Color("red").range_to(Color("Green"), self.max_health))
 
     def rotate_left(self):
-        self.da = 2
+        self.da = 3
 
     def rotate_right(self):
-        self.da = -2
+        self.da = -3
 
     def stop_rotation(self):
         self.da = 0
@@ -331,9 +334,10 @@ class Player(Sprite):
     def fire(self):
         num_of_missiles = 0
         for missile in missiles:
+            print(missile.state)
             if missile.state == "ready":
                 num_of_missiles += 1
-                print(num_of_missiles, player.ammo)
+        print(num_of_missiles, player.ammo)
         # 1 missile ready
         for missile in missiles:
             if num_of_missiles == 1 :
@@ -379,6 +383,7 @@ class Player(Sprite):
         if self.state == "active":
             self.heading += self.da
             self.heading %= 360
+            self.acc = self.acceleration * 10
             self.current_acc_dx = self.dx + math.cos(math.radians(self.heading)) * self.thrust
             self.current_acc_dy = self.dy + math.cos(math.radians(self.heading)) * self.thrust
 
@@ -412,6 +417,12 @@ class Player(Sprite):
         self.dx = 0
         self.dy = 0
         self.lives -= 1
+        self.acceleration = self.default_acceleration
+        self.ammo = 1
+        missiles.clear()
+        missiles.append(Missile(0, 100, "square", "yellow"))
+        for missile in missiles:
+            sprites.append(missile)
 
 
 # Render created sprite
@@ -524,11 +535,11 @@ class Enemy(Sprite):
 ## ---------- Missle class ---------- ##
 
 class Missile(Sprite):
-    def __init__ (self, x, y, shape, color):
+    def __init__ (self, x, y, shape = "square", color = "yellow"):
         Sprite.__init__(self, x, y, shape, color)
         self.state = "ready"
-        self.thrust = 1.5
-        self.max_fuel = 300
+        self.thrust = 2.0
+        self.max_fuel = 250
         self.fuel = self.max_fuel
         self.height = 2
         self.widght = 2
@@ -645,7 +656,7 @@ camera = Camera(player.x, player.y)
 # Create missle sprites
 missiles = []
 for m in range(player.ammo):
-    missiles.append(Missile(0, 100, "square", "yellow"))
+    missiles.append(Missile(0, 100))
 
 # Create radar object
 radar = Radar(400, -150, 180, 180)
@@ -712,8 +723,16 @@ while True:
             if player.is_collision(sprite):
                 sprite.reset()
                 if player.ammo < 5:
-                    player.ammo += 1
-                    missiles.append(Missile(0, 100, "square", "yellow"))
+                    power_item = random.choice(["speed", "missile"])
+                    if power_item == "missile":
+                        player.ammo += 1
+                        missiles.append(Missile(0, 100))
+                        for missile in missiles:
+                            sprites.append(missile)
+                    else:
+                        player.acceleration += 0.1
+                else:
+                    player.acceleration += 0.1
 
             for missile in missiles:
                 if missile.state == "active" and missile.is_collision(sprite):
