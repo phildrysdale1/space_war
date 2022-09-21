@@ -112,8 +112,6 @@ class Game():
         character_pen.draw_string(pen, "Level: {}".format(game.level), 400, 180)
         character_pen.draw_string(pen, "Enemies: {}".format(active_enemies), 400, 150)
 
-
-
 ## ---------- Character Pen class ---------- ##
 # For drawing text
 
@@ -207,10 +205,12 @@ class Sprite():
         self.color = color
         self.dx = 0
         self.dy = 0
+        self.max_dx = 0.5
+        self.max_dy = 0.5
         self.heading = 0
         self.da = 0
         self.thrust = 0.0
-        self.acceleration = 0.001
+        self.acceleration = 0.1
         self.health = 100
         self.max_health = 100
         self.width = 20
@@ -303,10 +303,10 @@ class Player(Sprite):
         self.colors = list(Color("red").range_to(Color("Green"), self.max_health))
 
     def rotate_left(self):
-        self.da = 0.75
+        self.da = 2
 
     def rotate_right(self):
-        self.da = -0.75
+        self.da = -2
 
     def stop_rotation(self):
         self.da = 0
@@ -325,11 +325,11 @@ class Player(Sprite):
         temp_dx = self.dx
         temp_dy = self.dy
 
-        self.dx = other.dx * 0.7
-        self.dy = other.dy * 0.7
+        self.dx = other.dx
+        self.dy = other.dy
 
-        other.dx = temp_dx * 0.7
-        other.dy = temp_dy * 0.7
+        other.dx = temp_dx
+        other.dy = temp_dy
 
     def update(self):
         if self.state == "active":
@@ -387,10 +387,26 @@ class Player(Sprite):
 class Enemy(Sprite):
     def __init__(self, x, y, shape, color):
         Sprite.__init__(self, x, y, shape, color)
-        self.max_health = 30
-        self.health = self.max_health
         # Create list spaning full health range and mapping it to a RGB color for a gradient healthbar
         self.colors = list(Color("red").range_to(Color("Green"), self.max_health))
+
+        self.type = random.choice(["hunter", "mine", "spy"])
+
+        if self.type == "hunter":
+            self.color = "red"
+            self.shape = "square"
+            self.max_health = 20
+            self.health = self.max_health
+        elif self.type == "mine":
+            self.color = "orange"
+            self.shape = "triangle"
+            self.max_health = 10
+            self.health = self.max_health
+        elif self.type == "spy":
+            self.color = "blue"
+            self.shape = "square"
+            self.max_health = 30
+            self.health = self.max_health
 
     def update(self):
         if self.state == "active":
@@ -404,6 +420,55 @@ class Enemy(Sprite):
             self.y += self.dy
 
             self.border_col_check()
+
+            if self.type == "hunter":
+                if self.x < player.x:
+                    self.dx += 0.005
+                else:
+                    self.dx -= 0.005
+                if self.y < player.y:
+                    self.dy += 0.005
+                else:
+                    self.dy -= 0.005               
+            
+            elif self.type == "mine":
+                self.heading += 2
+                self.dx += random.uniform(-0.01,0.01)
+                self.dy += random.uniform(-0.01,0.01)
+            
+            elif self.type == "spy":
+                if abs(self.x - player.x) < 100:
+                    if self.x < player.x:
+                        self.dx -= 0.005
+                    else:
+                        self.dx += 0.005
+                else:
+                    if self.x < player.x:
+                        self.dx += 0.005
+                    else:
+                        self.dx -= 0.005
+
+                if abs(self.y - player.y) < 100:
+                    if self.y < player.y:
+                        self.dy -= 0.005
+                    else:
+                        self.dy += 0.005            
+                else:
+                    if self.y < player.y:
+                        self.dy += 0.005
+                    else:
+                        self.dy -= 0.005 
+
+
+            # set max speed
+            if self.dx > self.max_dx:
+                self.dx = self.max_dx
+            elif self.dx < -self.max_dx:
+                self.dx = -self.max_dx
+            if self.dy > self.max_dy:
+                self.dy = self.max_dy
+            elif self.dy < -self.max_dy:
+                self.dy = -self.max_dy
 
             # check health
             if self.health <= 0:
@@ -576,23 +641,25 @@ while True:
         if isinstance(sprite, Enemy) and sprite.state == "active":
             if player.is_collision(sprite):
                 sprite.health -= 10
-                player.health -= 10
+                if sprite.type == "mine":
+                    player.health = 0
+                else:
+                    player.health -= 10
+                if sprite.health <= 0:
+                    sprite.reset()
                 player.bounce(sprite)
             
             if missile.state == "active" and missile.is_collision(sprite):
                 sprite.health -= 10
-                sprite.x = -100
-                sprite.y = -100
+                if sprite.health <= 0:
+                    sprite.reset()
                 missile.reset()
 
         if isinstance(sprite, Powerup):
             if player.is_collision(sprite):
-                sprite.x = 100
-                sprite.y = 100
+                pass
 
             if missile.state == "active" and missile.is_collision(sprite):
-                sprite.x = 100
-                sprite.y = 100
                 missile.reset()
 
     # Render Sprites
