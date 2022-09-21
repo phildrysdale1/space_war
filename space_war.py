@@ -1,4 +1,6 @@
 ## ---------- IMPORT PACKAGES ---------- ##
+from re import X
+from tkinter import Y
 import turtle
 import math
 import random
@@ -13,7 +15,7 @@ screen_height = 600
 
 ## ---------- CREATE DISPLAY ---------- ##
 win = turtle.Screen()
-win.setup(screen_width, screen_height)
+win.setup(screen_width + 220, screen_height + 20)
 win.title("Space Wars by Phil Drysdale")
 win.bgcolor("black")
 win.tracer(0)
@@ -105,6 +107,7 @@ class Sprite():
         self.width = 20
         self.height = 20
         self.state = "active"
+        self.radar = 200
         # Create list spaning full health range and mapping it to a RGB color for a gradient healthbar
         self.colors = list(Color("red").range_to(Color("Green"), self.max_health))
 
@@ -300,25 +303,6 @@ class Enemy(Sprite):
     def reset(self):
         self.state = "inactive"
 
-
-## ---------- Powerup class ---------- ##
-class Powerup(Sprite):
-    def __init__(self, x, y, shape, color):
-        Sprite.__init__(self, x, y, shape, color)
-
-
-## ---------- Camera class ---------- ##
-class Camera():
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
-    def update(self, x, y):
-        self.x = x
-        self.y  = y
-    
-    
-
 ## ---------- Missle class ---------- ##
 
 class Missile(Sprite):
@@ -376,6 +360,56 @@ class Missile(Sprite):
             pen.shapesize(1.0, 1.0, None)
 
 
+## ---------- Powerup class ---------- ##
+class Powerup(Sprite):
+    def __init__(self, x, y, shape, color):
+        Sprite.__init__(self, x, y, shape, color)
+
+
+## ---------- Camera class ---------- ##
+class Camera():
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def update(self, x, y):
+        self.x = x
+        self.y  = y
+
+## ---------- Radar class ---------- ## 
+class Radar():
+    def __init__(self, x, y, width, height):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+
+    def render(self, pen, sprites):
+
+        # draw radar circle
+        pen.setheading(90)
+        pen.goto(self.x + self.width / 2.0, self.y)
+        pen.pendown()
+        pen.circle(self.width / 2.0)
+        pen.penup()
+
+        # draw sprites on radar
+        for sprite in sprites:
+            if sprite.state == "active":
+                radar_x = self.x + (sprite.x - player.x) * (self.width/game.width)
+                radar_y = self.y + (sprite.y - player.y) * (self.height/game.height)
+                pen.goto(radar_x, radar_y)
+                pen.color(sprite.color)
+                pen.shape(sprite.shape)
+                pen.shapesize(0.2,0.2,None)
+                pen.setheading(sprite.heading)
+
+                # set radar distance
+                distance = ((player.x - sprite.x)**2 + (player.y-sprite.y)**2)**0.5
+                if distance < player.radar:
+                    pen.stamp()
+
+
 ## ---------- OBJECTS ---------- ##
 # Create player sprite
 player = Player(0,0,"triangle", "white")
@@ -385,6 +419,9 @@ camera = Camera(player.x, player.y)
 
 # Create missle sprite
 missile = Missile(0,100, "square", "yellow")
+
+# Create radar object
+radar = Radar(375, -150, 200, 200)
 
 # Sprites List
 sprites = []
@@ -452,9 +489,13 @@ while True:
 
     # Render Sprites
     for sprite in sprites:
-        sprite.render(pen, camera.x, camera.y)
+        sprite.render(pen, camera.x + 100, camera.y)
 
-    game.render_border(pen, camera.x, camera.y)
+    game.render_border(pen, camera.x + 100, camera.y)
+
+    # Render radar
+
+    radar.render(pen, sprites)
 
     # Check for end of level
     end_of_level = True
