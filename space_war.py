@@ -99,7 +99,7 @@ class Sprite():
         self.heading = 0
         self.da = 0
         self.thrust = 0.0
-        self.acceleration = 0.0008
+        self.acceleration = 0.001
         self.health = 100
         self.max_health = 100
         self.width = 20
@@ -185,22 +185,24 @@ class Player(Sprite):
         self.score = 0
         self.heading = 90 # determine direction for player sprite
         self.da = 0
+        self.max_dx = 0.4
+        self.max_dy = 0.4
         self.max_health = 100
         self.health = self.max_health
          # Create list spaning full health range and mapping it to a RGB color for a gradient healthbar
         self.colors = list(Color("red").range_to(Color("Green"), self.max_health))
 
     def rotate_left(self):
-        self.da = 0.5
+        self.da = 0.75
 
     def rotate_right(self):
-        self.da = -0.5
+        self.da = -0.75
 
     def stop_rotation(self):
         self.da = 0
 
     def accelerate(self):
-        if self.thrust < 0.00001: ## cap thrust to stop it getting crazy
+        if self.thrust < self.acceleration * 1.5: ## cap thrust to stop it getting crazy
             self.thrust += self.acceleration
 
     def decelerate(self):
@@ -223,9 +225,14 @@ class Player(Sprite):
         if self.state == "active":
             self.heading += self.da
             self.heading %= 360
+            self.current_acc_dx = self.dx + math.cos(math.radians(self.heading)) * self.thrust
+            self.current_acc_dy = self.dy + math.cos(math.radians(self.heading)) * self.thrust
 
-            self.dx += math.cos(math.radians(self.heading)) * self.thrust
-            self.dy += math.sin(math.radians(self.heading)) * self.thrust
+            # accelerate up to max speed
+            if self.current_acc_dx < self.max_dx and self.current_acc_dx > -self.max_dx:
+                    self.dx += math.cos(math.radians(self.heading)) * self.thrust
+            if self.current_acc_dy < self.max_dy and self.current_acc_dy > -self.max_dy:
+                    self.dy += math.sin(math.radians(self.heading)) * self.thrust
 
             self.x += self.dx
             self.y += self.dy
@@ -437,6 +444,5 @@ while True:
     if end_of_level:
         game.level += 1
         game.start_level()
-
     # Update screen
     win.update()
