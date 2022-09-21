@@ -66,7 +66,7 @@ class Game():
             sprites[-1].dy = dy
 
 
-    def render_border(self, pen):
+    def render_border(self, pen, x_offset, y_offset):
         pen.color("white")
         pen.width(3)
         pen.penup()
@@ -76,12 +76,12 @@ class Game():
         top = self.height / 2.0
         bottom = -self.height / 2.0
 
-        pen.goto(left, top)
+        pen.goto(left - x_offset, top - y_offset)
         pen.pendown()
-        pen.goto(right, top)
-        pen.goto(right, bottom)
-        pen.goto(left, bottom)
-        pen.goto(left, top)
+        pen.goto(right - x_offset, top - y_offset)
+        pen.goto(right - x_offset, bottom - y_offset)
+        pen.goto(left - x_offset, bottom - y_offset)
+        pen.goto(left - x_offset, top- y_offset)
 
         pen.penup()
 
@@ -121,10 +121,8 @@ class Sprite():
     def update(self):
         self.heading += self.da
         self.heading %= 360
-
         self.dx += math.cos(math.radians(self.heading)) * self.thrust
         self.dy += math.sin(math.radians(self.heading)) * self.thrust
-
         self.x += self.dx
         self.y += self.dy
 
@@ -146,19 +144,19 @@ class Sprite():
             self.dy *= -1
 
     # Render created sprite
-    def render(self, pen):
+    def render(self, pen, x_offset, y_offset):
         if self.state == "active":
-            pen.goto(self.x, self.y)
+            pen.goto(self.x - x_offset, self.y - y_offset)
             pen.setheading(self.heading)
             pen.shape(self.shape)
             pen.color(self.color)
             pen.stamp()
 
-            self.render_health_meter(pen)
+            self.render_health_meter(pen, x_offset, y_offset)
 
     # Render health bar 
-    def render_health_meter(self, pen):
-        pen.goto(self.x -10, self.y +20)
+    def render_health_meter(self, pen, x_offset, y_offset):
+        pen.goto(self.x - x_offset - 10, self.y - y_offset +20)
         pen.width(3)
         pen.pendown()
         pen.setheading(0)
@@ -173,7 +171,7 @@ class Sprite():
 
 # Create game object
 
-game = Game(800, 600)
+game = Game(700, 500)
 
 
 
@@ -254,9 +252,9 @@ class Player(Sprite):
 
 
 # Render created sprite
-    def render(self, pen):
+    def render(self, pen, x_offset, y_offset):
         pen.shapesize(0.5, 1.0, None) # modify shape of player ship to make it clear which way it's facing.
-        pen.goto(self.x, self.y)
+        pen.goto(self.x - x_offset, self.y - y_offset)
         pen.setheading(self.heading)
         pen.shape(self.shape)
         pen.color(self.color)
@@ -264,7 +262,7 @@ class Player(Sprite):
         # reset shapesize to stop any other objects being modified
         pen.shapesize(1.0, 1.0, None)
 
-        self.render_health_meter(pen)
+        self.render_health_meter(pen, x_offset, y_offset)
 
 ## ---------- Enemy class ---------- ##
 class Enemy(Sprite):
@@ -300,6 +298,19 @@ class Enemy(Sprite):
 class Powerup(Sprite):
     def __init__(self, x, y, shape, color):
         Sprite.__init__(self, x, y, shape, color)
+
+
+## ---------- Camera class ---------- ##
+class Camera():
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def update(self, x, y):
+        self.x = x
+        self.y  = y
+    
+    
 
 ## ---------- Missle class ---------- ##
 
@@ -346,10 +357,10 @@ class Missile(Sprite):
         self.state = "ready"
 
 
-    def render(self, pen):
+    def render(self, pen, x_offset, y_offset):
         if self.state == "active":
             pen.shapesize(0.1, 0.1, None) # modify shape of player ship to make it clear which way it's facing.
-            pen.goto(self.x, self.y)
+            pen.goto(self.x - x_offset, self.y - y_offset)
             pen.setheading(self.heading)
             pen.shape(self.shape)
             pen.color(self.color)
@@ -357,12 +368,13 @@ class Missile(Sprite):
             # reset shapesize to stop any other objects being modified
             pen.shapesize(1.0, 1.0, None)
 
-            self.render_health_meter(pen)
-
 
 ## ---------- OBJECTS ---------- ##
 # Create player sprite
 player = Player(0,0,"triangle", "white")
+
+# Create camera 
+camera = Camera(player.x, player.y)
 
 # Create missle sprite
 missile = Missile(0,100, "square", "yellow")
@@ -398,6 +410,9 @@ while True:
 
     ## Run game loop
 
+    # update camera
+    camera.update(player.x, player.y)
+
     # Update sprites
     for sprite in sprites:
         sprite.update()
@@ -430,9 +445,9 @@ while True:
 
     # Render Sprites
     for sprite in sprites:
-        sprite.render(pen)
+        sprite.render(pen, camera.x, camera.y)
 
-    game.render_border(pen)
+    game.render_border(pen, camera.x, camera.y)
 
     # Check for end of level
     end_of_level = True
