@@ -87,6 +87,115 @@ class Game():
 
         pen.penup()
 
+    def render_hud(self, pen, score, active_enemies = 0):
+        pen.color ("grey")
+        pen.penup()
+        pen.goto(400,0)
+        pen.shape("square")
+        pen.setheading(90)
+        pen.shapesize(10,32, None)
+        pen.stamp()
+        pen.penup()
+        
+        pen.color("white")
+        pen.width(3)
+        pen.goto(300,400)
+        pen.pendown()
+        pen.goto(300, -400)
+
+        pen.penup()
+        pen.color("white")
+        character_pen.scale = 1.0
+        character_pen.draw_string(pen, "Space Wars", 400, 270)
+        character_pen.draw_string(pen, "Score: {}".format(score), 400, 240)
+        character_pen.draw_string(pen, "Lives: {}".format(player.lives), 400, 210)
+        character_pen.draw_string(pen, "Level: {}".format(game.level), 400, 180)
+        character_pen.draw_string(pen, "Enemies: {}".format(active_enemies), 400, 150)
+
+
+
+## ---------- Character Pen class ---------- ##
+# For drawing text
+
+class CharacterPen():
+    def __init__(self,color="white", scale = 1.0):
+        self.color = color
+        self.scale = scale
+        
+        self.characters = {}
+        self.characters["1"] = ((-5, 10), (0, 10), (0, -10), (-5, -10), (5, -10))
+        self.characters["2"] = ((-5, 10),(5, 10),(5, 0), (-5, 0), (-5, -10), (5, -10))
+        self.characters["3"] = ((-5, 10),(5, 10),(5, 0), (0, 0), (5, 0), (5,-10), (-5, -10))
+        self.characters["4"] = ((-5, 10), (-5, 0), (5, 0), (2,0), (2, 5), (2, -10))
+        self.characters["5"] = ((5, 10), (-5, 10), (-5, 0), (5,0), (5,-10), (-5, -10))
+        self.characters["6"] = ((5, 10), (-5, 10), (-5, -10), (5, -10), (5, 0), (-5, 0))
+        self.characters["7"] = ((-5, 10), (5, 10), (0, -10))
+        self.characters["8"] = ((-5, 0), (5, 0), (5, 10), (-5, 10), (-5, -10), (5, -10), (5, 0))
+        self.characters["9"] = ((5, -10), (5, 10), (-5, 10), (-5, 0), (5, 0))
+        self.characters["0"] = ((-5, 10), (5, 10), (5, -10), (-5, -10), (-5, 10))
+
+        self.characters["A"] = ((-5, -10), (-5, 10), (5, 10), (5, -10), (5, 0), (-5, 0))
+        self.characters["B"] = ((-5, -10), (-5, 10), (3, 10), (3, 0), (-5, 0), (5,0), (5, -10), (-5, -10))
+        self.characters["C"] = ((5, 10), (-5, 10), (-5, -10), (5, -10))
+        self.characters["D"] = ((-5, 10), (-5, -10), (5, -8), (5, 8), (-5, 10))
+        self.characters["E"] = ((5, 10), (-5, 10), (-5, 0), (0, 0), (-5, 0), (-5, -10), (5, -10))
+        self.characters["F"] = ((5, 10), (-5, 10), (-5, 0), (5, 0), (-5, 0), (-5, -10))
+        self.characters["G"] = ((5, 10), (-5, 10), (-5, -10), (5, -10), (5, 0), (0, 0))
+        self.characters["H"] = ((-5, 10), (-5, -10), (-5, 0), (5, 0), (5, 10), (5, -10))
+        self.characters["I"] = ((-5, 10), (5, 10), (0, 10), (0, -10), (-5, -10), (5, -10))
+        self.characters["J"] = ((5, 10), (5, -10), (-5, -10), (-5, 0))   
+        self.characters["K"] = ((-5, 10), (-5, -10), (-5, 0), (5, 10), (-5, 0), (5, -10))
+        self.characters["L"] = ((-5, 10), (-5, -10), (5, -10))
+        self.characters["M"] = ((-5, -10), (-3, 10), (0, 0), (3, 10), (5, -10))
+        self.characters["N"] = ((-5, -10), (-5, 10), (5, -10), (5, 10))
+        self.characters["O"] = ((-5, 10), (5, 10), (5, -10), (-5, -10), (-5, 10))
+        self.characters["P"] = ((-5, -10), (-5, 10), (5, 10), (5, 0), (-5, 0))
+        self.characters["Q"] = ((5, -10), (-5, -10), (-5, 10), (5, 10), (5, -10), (2, -7), (6, -11))
+        self.characters["R"] = ((-5, -10), (-5, 10), (5, 10), (5, 0), (-5, 0), (5, -10))
+        self.characters["S"] = ((5, 8), (5, 10), (-5, 10), (-5, 0), (5, 0), (5, -10), (-5, -10), (-5, -8))
+        self.characters["T"] = ((-5, 10), (5, 10), (0, 10), (0, -10)) 
+        self.characters["V"] = ((-5, 10), (0, -10), (5, 10)) 
+        self.characters["U"] = ((-5, 10), (-5, -10), (5, -10), (5, 10)) 
+        self.characters["W"] = ((-5, 10), (-3, -10), (0, 0), (3, -10), (5, 10))   
+        self.characters["X"] = ((-5, 10), (5, -10), (0, 0), (-5, -10), (5, 10))   
+        self.characters["Y"] = ((-5, 10), (0, 0), (5, 10), (0,0), (0, -10))   
+        self.characters["Z"] = ((-5, 10), (5, 10), (-5, -10), (5, -10))   
+
+        self.characters["-"] = ((-3, 0), (3, 0)) 
+
+    def draw_string(self, pen, str, x, y):
+        pen.width(2)
+        pen.color(self.color)
+        
+        # center text
+        x -= 15 * self.scale * (len(str)-1) / 2
+
+        for character in str:
+            self.draw_character(pen, character, x, y)
+            x += 15 * self.scale      
+
+    def draw_character(self, pen, character, x, y):
+        scale = self.scale
+
+        if character in "abcdefghijklmnopqrstuvwxyz":
+            scale *= 0.8
+
+        character = character.upper()
+        
+        # check for character existence
+        if character in self.characters:
+            # draw character
+            pen.penup()
+            xy = self.characters[character][0]
+            pen.goto(x + xy[0] * scale, y + xy[1] * scale)
+            pen.pendown()
+            for i in range(1, len(self.characters[character])):
+                xy = self.characters[character][i]
+                pen.goto(x + xy[0] * scale, y + xy[1] * scale)
+            pen.penup()
+
+character_pen = CharacterPen("white", 3.0)
+
 
 ## ---------- Sprite parent class ---------- ##
 class Sprite():
@@ -107,7 +216,7 @@ class Sprite():
         self.width = 20
         self.height = 20
         self.state = "active"
-        self.radar = 200
+        self.radar = 330
         # Create list spaning full health range and mapping it to a RGB color for a gradient healthbar
         self.colors = list(Color("red").range_to(Color("Green"), self.max_health))
 
@@ -388,6 +497,7 @@ class Radar():
 
         # draw radar circle
         pen.setheading(90)
+        pen.color("white")
         pen.goto(self.x + self.width / 2.0, self.y)
         pen.pendown()
         pen.circle(self.width / 2.0)
@@ -421,7 +531,7 @@ camera = Camera(player.x, player.y)
 missile = Missile(0,100, "square", "yellow")
 
 # Create radar object
-radar = Radar(375, -150, 200, 200)
+radar = Radar(400, -150, 180, 180)
 
 # Sprites List
 sprites = []
@@ -468,7 +578,6 @@ while True:
                 sprite.health -= 10
                 player.health -= 10
                 player.bounce(sprite)
-                player.lives -= 1
             
             if missile.state == "active" and missile.is_collision(sprite):
                 sprite.health -= 10
@@ -486,12 +595,14 @@ while True:
                 sprite.y = 100
                 missile.reset()
 
-
     # Render Sprites
     for sprite in sprites:
         sprite.render(pen, camera.x + 100, camera.y)
 
     game.render_border(pen, camera.x + 100, camera.y)
+
+    # draw text
+    game.render_hud(pen, 0,0)
 
     # Render radar
 
