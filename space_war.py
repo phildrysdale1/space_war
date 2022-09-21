@@ -45,7 +45,8 @@ class Game():
         sprites.append(player)
         
         # Add missile
-        sprites.append(missile)
+        for missile in missiles:
+            sprites.append(missile)
 
         # Add enemies
         for l in range(self.level):
@@ -57,15 +58,22 @@ class Game():
             sprites[-1].dx = dx
             sprites[-1].dy = dy
 
-        # Add powerups
-        for l in range(self.level):
-            x = random.randint(-self.width/2+10, self.width/2-10)
-            y = random.randint(-self.height/2+10, self.height/2-10)
-            dx = random.uniform(-0.5,0.5)
-            dy = random.uniform(-0.5,0.5)
-            sprites.append(Powerup(x,y,"circle", "green"))
-            sprites[-1].dx = dx
-            sprites[-1].dy = dy
+        # Add powerups 1 per level number
+###     for l in range(self.level):
+###           x = random.randint(-self.width/2+10, self.width/2-10)
+###            y = random.randint(-self.height/2+10, self.height/2-10)
+###            dx = random.uniform(-0.5,0.5)
+###            dy = random.uniform(-0.5,0.5)
+###            sprites.append(Powerup(x,y,"circle", "green"))
+###            sprites[-1].dx = dx
+###            sprites[-1].dy = dy
+
+        # Add 1 powerup each level
+        powerup_x = random.randint(-self.width/2+10, self.width/2-10)
+        powerup_y = random.randint(-self.height/2+10, self.height/2-10)
+        sprites.append(Powerup(powerup_x,powerup_y,"circle", "green"))
+        sprites[-1].dx = random.uniform(-0.5,0.5)
+        sprites[-1].dy = random.uniform(-0.5,0.5)
 
 
     def render_border(self, pen, x_offset, y_offset):
@@ -111,6 +119,7 @@ class Game():
         character_pen.draw_string(pen, "Lives: {}".format(player.lives), 400, 210)
         character_pen.draw_string(pen, "Level: {}".format(game.level), 400, 180)
         character_pen.draw_string(pen, "Enemies: {}".format(active_enemies), 400, 150)
+        character_pen.draw_string(pen, "Missiles: {}".format(player.ammo), 400, 120)
 
 ## ---------- Character Pen class ---------- ##
 # For drawing text
@@ -299,6 +308,7 @@ class Player(Sprite):
         self.max_dy = 0.4
         self.max_health = 100
         self.health = self.max_health
+        self.ammo = 2
          # Create list spaning full health range and mapping it to a RGB color for a gradient healthbar
         self.colors = list(Color("red").range_to(Color("Green"), self.max_health))
 
@@ -319,7 +329,41 @@ class Player(Sprite):
         self.thrust = 0.0
 
     def fire(self):
-        missile.fire(self.x, self.y, self.heading, self.dx, self.dy)
+        num_of_missiles = 0
+        for missile in missiles:
+            if missile.state == "ready":
+                num_of_missiles += 1
+                print(num_of_missiles, player.ammo)
+        # 1 missile ready
+        for missile in missiles:
+            if num_of_missiles == 1 :
+                for missile in missiles:
+                    if missile.state == "ready":
+                        missile.fire(self.x, self.y, self.heading, self.dx, self.dy)
+        for missile in missiles:
+            if num_of_missiles == 2:
+                directions = [-3, 3]
+                for missile in missiles:
+                    if missile.state == "ready":
+                        missile.fire(self.x, self.y, self.heading + directions.pop(), self.dx, self.dy)
+        for missile in missiles:
+            if num_of_missiles == 3:
+                directions = [-5, 0, 5]
+                for missile in missiles:
+                    if missile.state == "ready":
+                        missile.fire(self.x, self.y, self.heading + directions.pop(), self.dx, self.dy)
+        for missile in missiles:
+            if num_of_missiles == 4:
+                directions = [-6, -2, 2, 6]
+                for missile in missiles:
+                    if missile.state == "ready":
+                        missile.fire(self.x, self.y, self.heading + directions.pop(), self.dx, self.dy)
+        for missile in missiles:
+            if num_of_missiles >= 5:
+                directions = [-8, -4, 0, 4, 8]
+                for missile in missiles:
+                    if missile.state == "ready":
+                        missile.fire(self.x, self.y, self.heading + directions.pop(), self.dx, self.dy)
 
     def bounce(self, other):
         temp_dx = self.dx
@@ -539,6 +583,12 @@ class Powerup(Sprite):
     def __init__(self, x, y, shape, color):
         Sprite.__init__(self, x, y, shape, color)
 
+    def reset(self):
+        self.state = "inactive"
+        self.x = 2000
+        self.y = 2000
+        self.dx = 0
+        self.dy = 0
 
 ## ---------- Camera class ---------- ##
 class Camera():
@@ -592,8 +642,10 @@ player = Player(0,0,"triangle", "white")
 # Create camera 
 camera = Camera(player.x, player.y)
 
-# Create missle sprite
-missile = Missile(0,100, "square", "yellow")
+# Create missle sprites
+missiles = []
+for m in range(player.ammo):
+    missiles.append(Missile(0, 100, "square", "yellow"))
 
 # Create radar object
 radar = Radar(400, -150, 180, 180)
@@ -648,19 +700,25 @@ while True:
                 if sprite.health <= 0:
                     sprite.reset()
                 player.bounce(sprite)
-            
-            if missile.state == "active" and missile.is_collision(sprite):
-                sprite.health -= 10
-                if sprite.health <= 0:
-                    sprite.reset()
-                missile.reset()
+
+            for missile in missiles:
+                if missile.state == "active" and missile.is_collision(sprite):
+                    sprite.health -= 10
+                    if sprite.health <= 0:
+                        sprite.reset()
+                    missile.reset()
 
         if isinstance(sprite, Powerup):
             if player.is_collision(sprite):
-                pass
+                sprite.reset()
+                if player.ammo < 5:
+                    player.ammo += 1
+                    missiles.append(Missile(0, 100, "square", "yellow"))
 
-            if missile.state == "active" and missile.is_collision(sprite):
-                missile.reset()
+            for missile in missiles:
+                if missile.state == "active" and missile.is_collision(sprite):
+                    missile.reset()
+                    sprite.reset()
 
     # Render Sprites
     for sprite in sprites:
