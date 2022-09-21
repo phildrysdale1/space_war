@@ -226,11 +226,18 @@ class Player(Sprite):
             self.current_acc_dx = self.dx + math.cos(math.radians(self.heading)) * self.thrust
             self.current_acc_dy = self.dy + math.cos(math.radians(self.heading)) * self.thrust
 
-            # accelerate up to max speed
-            if self.current_acc_dx < self.max_dx and self.current_acc_dx > -self.max_dx:
-                    self.dx += math.cos(math.radians(self.heading)) * self.thrust
-            if self.current_acc_dy < self.max_dy and self.current_acc_dy > -self.max_dy:
-                    self.dy += math.sin(math.radians(self.heading)) * self.thrust
+            # stop acceleration breaking at max speed
+            if self.dx > self.max_dx:
+                self.dx = self.max_dx - 0.01
+            elif self.dx < -self.max_dx:
+                self.dx = -self.max_dx + 0.01
+            if self.dy > self.max_dy:
+                self.dy = self.max_dy - 0.01
+            elif self.dy < -self.max_dy:
+                self.dy = -self.max_dy + 0.01
+            # accelerate
+            self.dx += math.cos(math.radians(self.heading)) * self.thrust
+            self.dy += math.sin(math.radians(self.heading)) * self.thrust
 
             self.x += self.dx
             self.y += self.dy
