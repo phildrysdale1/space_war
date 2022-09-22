@@ -68,16 +68,6 @@ class Game():
             sprites[-1].dx = dx
             sprites[-1].dy = dy
 
-        # Add powerups 1 per level number
-###     for l in range(self.level):
-###           x = random.randint(-self.width/2+10, self.width/2-10)
-###            y = random.randint(-self.height/2+10, self.height/2-10)
-###            dx = random.uniform(-0.5,0.5)
-###            dy = random.uniform(-0.5,0.5)
-###            sprites.append(Powerup(x,y,"circle", "green"))
-###            sprites[-1].dx = dx
-###            sprites[-1].dy = dy
-
         # Add 1 powerup each level
         powerup_x = random.randint(-self.width/2+10, self.width/2-10)
         powerup_y = random.randint(-self.height/2+10, self.height/2-10)
@@ -125,7 +115,7 @@ class Game():
         pen.color("white")
         character_pen.scale = 1.0
         character_pen.draw_string(pen, "Space Wars", 400, 270)
-        character_pen.draw_string(pen, "Score: {}".format(score), 400, 240)
+        character_pen.draw_string(pen, "Score: {}".format(player.score), 400, 240)
         character_pen.draw_string(pen, "Lives: {}".format(player.lives), 400, 210)
         character_pen.draw_string(pen, "Level: {}".format(game.level), 400, 180)
         character_pen.draw_string(pen, "Enemies: {}".format(active_enemies), 400, 150)
@@ -212,51 +202,55 @@ class CharacterPen():
                 pen.goto(x + xy[0] * scale, y + xy[1] * scale)
             pen.penup()
 
-## ---------- Menu ---------- ##
-character_pen = CharacterPen("white", 3.0)
-character_pen.draw_string(pen, "Space Wars", 0, 190)
-character_pen.scale = 1.0
-character_pen.draw_string(pen, "by Phil Drysdale", 0, 130)
+def menu():
+    ## ---------- Menu ---------- ##
+    global character_pen
+    character_pen = CharacterPen("white", 3.0)
+    character_pen.draw_string(pen, "Space Wars", 0, 190)
+    character_pen.scale = 1.0
+    character_pen.draw_string(pen, "by Phil Drysdale", 0, 130)
 
-# Player / Enemy Sprite explanations
+    # Player / Enemy Sprite explanations
 
-pen.shape("triangle")
-pen.goto(-200,70)
-pen.stamp()
-character_pen.draw_string(pen, "Player", -200, 30)
-pen.shape("square")
-pen.color("red")
-pen.goto(-50, 70)
-pen.stamp()
-pen.shape("square")
-pen.color("blue")
-pen.goto(-90, 70)
-pen.stamp()
-character_pen.draw_string(pen, "Enemies", -70, 30)
-pen.shape("triangle")
-pen.color("orange")
-pen.goto(70, 70)
-pen.stamp()
-character_pen.draw_string(pen, "Mines", 70, 30)
-pen.shape("circle")
-pen.color("green")
-pen.goto(200, 70)
-pen.stamp()
-character_pen.draw_string(pen, "Powerups", 200, 30)
+    pen.shape("triangle")
+    pen.goto(-200,70)
+    pen.stamp()
+    character_pen.draw_string(pen, "Player", -200, 30)
+    pen.shape("square")
+    pen.color("red")
+    pen.goto(-50, 70)
+    pen.stamp()
+    pen.shape("square")
+    pen.color("blue")
+    pen.goto(-90, 70)
+    pen.stamp()
+    character_pen.draw_string(pen, "Enemies", -70, 30)
+    pen.shape("triangle")
+    pen.color("orange")
+    pen.goto(70, 70)
+    pen.stamp()
+    character_pen.draw_string(pen, "Mines", 70, 30)
+    pen.shape("circle")
+    pen.color("green")
+    pen.goto(200, 70)
+    pen.stamp()
+    character_pen.draw_string(pen, "Powerups", 200, 30)
 
-character_pen = CharacterPen("white", 1.5)
-character_pen.draw_string(pen, "Controls", 0, -40)
-character_pen.scale = 1.0
-character_pen.draw_string(pen, "Accelerate", -300, -100)
-character_pen.draw_string(pen, "w", -300, -150)
-character_pen.draw_string(pen, "Turn Left", -100, -100)
-character_pen.draw_string(pen, "a", -100, -150)
-character_pen.draw_string(pen, "Turn Right", 100, -100)
-character_pen.draw_string(pen, "d", 100, -150)
-character_pen.draw_string(pen, "Fire Missile", 300, -100)
-character_pen.draw_string(pen, "space", 300, -150)
+    character_pen = CharacterPen("white", 1.5)
+    character_pen.draw_string(pen, "Controls", 0, -40)
+    character_pen.scale = 1.0
+    character_pen.draw_string(pen, "Accelerate", -300, -100)
+    character_pen.draw_string(pen, "w", -300, -150)
+    character_pen.draw_string(pen, "Turn Left", -100, -100)
+    character_pen.draw_string(pen, "a", -100, -150)
+    character_pen.draw_string(pen, "Turn Right", 100, -100)
+    character_pen.draw_string(pen, "d", 100, -150)
+    character_pen.draw_string(pen, "Fire Missile", 300, -100)
+    character_pen.draw_string(pen, "space", 300, -150)
 
-character_pen.draw_string(pen, "press enter to begin", 0, -200)
+    character_pen.draw_string(pen, "press enter to begin", 0, -200)
+
+menu()
 win.tracer(0)
 
 ## ---------- Sprite parent class ---------- ##
@@ -585,6 +579,7 @@ class Enemy(Sprite):
     
     def reset(self):
         self.state = "inactive"
+        player.score += 1
 
 ## ---------- Missle class ---------- ##
 
@@ -754,7 +749,7 @@ while True:
 
         # Clear screen
         pen.clear()
-
+        
         ## Run game loop
 
         # update camera
@@ -827,5 +822,6 @@ while True:
         if end_of_level:
             game.level += 1
             game.start_level()
+
         # Update screen
         win.update()
