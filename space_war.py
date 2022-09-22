@@ -18,7 +18,6 @@ win = turtle.Screen()
 win.setup(screen_width + 220, screen_height + 20)
 win.title("Space Wars by Phil Drysdale")
 win.bgcolor("black")
-win.tracer(0)
 
 ## ---------- RENDERING OBJECTS ---------- ##
 # CREATE MAIN PEN OBJECT FOR RENDERING ALL OBJECTS
@@ -37,6 +36,17 @@ class Game():
         self.width = width
         self.height = height
         self.level = 1
+        self.state = "menu"
+
+    def unpause(self):
+        self.state = "in game"
+
+    def pause(self):
+        self.state = "menu"
+        character_pen = CharacterPen("white", 2.0)
+        character_pen.draw_string(pen, "Game Paused", 0, 100)
+        character_pen.draw_string(pen, "Press Enter to Continue", 0, -100)
+
 
     def start_level(self):
         sprites.clear()
@@ -202,8 +212,52 @@ class CharacterPen():
                 pen.goto(x + xy[0] * scale, y + xy[1] * scale)
             pen.penup()
 
+## ---------- Menu ---------- ##
 character_pen = CharacterPen("white", 3.0)
+character_pen.draw_string(pen, "Space Wars", 0, 190)
+character_pen.scale = 1.0
+character_pen.draw_string(pen, "by Phil Drysdale", 0, 130)
 
+# Player / Enemy Sprite explanations
+
+pen.shape("triangle")
+pen.goto(-200,70)
+pen.stamp()
+character_pen.draw_string(pen, "Player", -200, 30)
+pen.shape("square")
+pen.color("red")
+pen.goto(-50, 70)
+pen.stamp()
+pen.shape("square")
+pen.color("blue")
+pen.goto(-90, 70)
+pen.stamp()
+character_pen.draw_string(pen, "Enemies", -70, 30)
+pen.shape("triangle")
+pen.color("orange")
+pen.goto(70, 70)
+pen.stamp()
+character_pen.draw_string(pen, "Mines", 70, 30)
+pen.shape("circle")
+pen.color("green")
+pen.goto(200, 70)
+pen.stamp()
+character_pen.draw_string(pen, "Powerups", 200, 30)
+
+character_pen = CharacterPen("white", 1.5)
+character_pen.draw_string(pen, "Controls", 0, -40)
+character_pen.scale = 1.0
+character_pen.draw_string(pen, "Accelerate", -300, -100)
+character_pen.draw_string(pen, "w", -300, -150)
+character_pen.draw_string(pen, "Turn Left", -100, -100)
+character_pen.draw_string(pen, "a", -100, -150)
+character_pen.draw_string(pen, "Turn Right", 100, -100)
+character_pen.draw_string(pen, "d", 100, -150)
+character_pen.draw_string(pen, "Fire Missile", 300, -100)
+character_pen.draw_string(pen, "space", 300, -150)
+
+character_pen.draw_string(pen, "press enter to begin", 0, -200)
+win.tracer(0)
 
 ## ---------- Sprite parent class ---------- ##
 class Sprite():
@@ -681,86 +735,97 @@ win.onkeyrelease(player.stop_rotation, "d")
 
 win.onkeypress(player.fire, "space")
 
+if game.state == "menu":
+    win.onkeypress(game.unpause, "Return")
+
+win.onkeypress(game.pause, "Escape")
+    
 ## ---------- FUNCTIONS ---------- ##
 
 
 
 ## ---------- GAME LOOP ---------- ##
 while True:
-    # Clear screen
-    pen.clear()
+    # Menu
+    
+    if game.state == "menu":
+        win.update()
+    elif game.state == "in game":
 
-    ## Run game loop
+        # Clear screen
+        pen.clear()
 
-    # update camera
-    camera.update(player.x, player.y)
+        ## Run game loop
 
-    # Update sprites
-    for sprite in sprites:
-        sprite.update()
+        # update camera
+        camera.update(player.x, player.y)
 
-    # Check for collisions
-    for sprite in sprites:
-        if isinstance(sprite, Enemy) and sprite.state == "active":
-            if player.is_collision(sprite):
-                sprite.health -= 10
-                if sprite.type == "mine":
-                    player.health = 0
-                else:
-                    player.health -= 10
-                if sprite.health <= 0:
-                    sprite.reset()
-                player.bounce(sprite)
+        # Update sprites
+        for sprite in sprites:
+            sprite.update()
 
-            for missile in missiles:
-                if missile.state == "active" and missile.is_collision(sprite):
+        # Check for collisions
+        for sprite in sprites:
+            if isinstance(sprite, Enemy) and sprite.state == "active":
+                if player.is_collision(sprite):
                     sprite.health -= 10
+                    if sprite.type == "mine":
+                        player.health = 0
+                    else:
+                        player.health -= 10
                     if sprite.health <= 0:
                         sprite.reset()
-                    missile.reset()
+                    player.bounce(sprite)
 
-        if isinstance(sprite, Powerup):
-            if player.is_collision(sprite):
-                sprite.reset()
-                if player.ammo < 5:
-                    power_item = random.choice(["speed", "missile"])
-                    if power_item == "missile":
-                        player.ammo += 1
-                        missiles.append(Missile(0, 100))
-                        for missile in missiles:
-                            sprites.append(missile)
+                for missile in missiles:
+                    if missile.state == "active" and missile.is_collision(sprite):
+                        sprite.health -= 10
+                        if sprite.health <= 0:
+                            sprite.reset()
+                        missile.reset()
+
+            if isinstance(sprite, Powerup):
+                if player.is_collision(sprite):
+                    sprite.reset()
+                    if player.ammo < 5:
+                        power_item = random.choice(["speed", "missile"])
+                        if power_item == "missile":
+                            player.ammo += 1
+                            missiles.append(Missile(0, 100))
+                            for missile in missiles:
+                                sprites.append(missile)
+                        else:
+                            player.acceleration += 0.1
                     else:
                         player.acceleration += 0.1
-                else:
-                    player.acceleration += 0.1
 
-            for missile in missiles:
-                if missile.state == "active" and missile.is_collision(sprite):
-                    missile.reset()
-                    sprite.reset()
+                for missile in missiles:
+                    if missile.state == "active" and missile.is_collision(sprite):
+                        missile.reset()
+                        sprite.reset()
 
-    # Render Sprites
-    for sprite in sprites:
-        sprite.render(pen, camera.x + 100, camera.y)
+        # Render Sprites
+        for sprite in sprites:
+            sprite.render(pen, camera.x + 100, camera.y)
 
-    game.render_border(pen, camera.x + 100, camera.y)
+        game.render_border(pen, camera.x + 100, camera.y)
 
-    # draw text
-    game.render_hud(pen, 0,0)
+        # draw text
+        game.render_hud(pen, 0,0)
 
-    # Render radar
+        # Render radar
 
-    radar.render(pen, sprites)
+        radar.render(pen, sprites)
 
-    # Check for end of level
-    end_of_level = True
-    for sprite in sprites:
-        #look for active enemy
-        if isinstance(sprite, Enemy) and sprite.state == "active":
-            end_of_level = False
-            break
-    if end_of_level:
-        game.level += 1
-        game.start_level()
-    # Update screen
-    win.update()
+        # Check for end of level
+        end_of_level = True
+        for sprite in sprites:
+            #look for active enemy
+            if isinstance(sprite, Enemy) and sprite.state == "active":
+                end_of_level = False
+                break
+        if end_of_level:
+            game.level += 1
+            game.start_level()
+        # Update screen
+        win.update()
